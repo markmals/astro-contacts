@@ -37,7 +37,7 @@ const hasAvatar = !!contact.avatar;
                     transition:name="favorite-button"
                     favorite={contact.favorite!}
                     id={contact.id}
-                    url={Astro.request.url}
+                    url={Astro.url}
                 />
             </h1>
 
@@ -61,7 +61,7 @@ const hasAvatar = !!contact.avatar;
                 <form action={`/contacts/${id}/edit`}>
                     <button type="submit">Edit</button>
                 </form>
-                <DeleteForm client:load url={Astro.request.url}>
+                <DeleteForm client:load url={Astro.url}>
                     <input type="hidden" name="id" value={id} />
                     <button type="submit">Delete</button>
                 </DeleteForm>

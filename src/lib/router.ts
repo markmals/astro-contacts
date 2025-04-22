@@ -77,11 +77,33 @@ type PageLocation = {
     toString(): string;
 };
 
-export type Router = {
-    location: PageLocation;
+type NavigatingStates = {
+    Idle: {
+        state: "idle";
+        to: null;
+        from: null;
+        formData: null;
+    };
+    Loading: {
+        state: "loading";
+        to: PageLocation;
+        from: PageLocation;
+        formData: null;
+    };
+    Submitting: {
+        state: "submitting";
+        to: PageLocation;
+        from: PageLocation;
+        formData?: FormData;
+    };
+};
+type Navigating = NavigatingStates[keyof NavigatingStates];
 
-    to: Navigation;
-    from: PageLocation | null;
+export type Router = {
+    page: {
+        location: PageLocation;
+    };
+    navigating: Navigating;
 
     navigate(to: To, options?: Options): Promise<void>;
     navigate(target: SubmitTarget, options?: Options): Promise<void>;
@@ -90,51 +112,49 @@ export type Router = {
     isPending(path: string): boolean;
 };
 
-function getCurrentLocation(url: string): PageLocation {
+function getCurrentLocation(url: URL): PageLocation {
     if (typeof window !== "undefined") {
         return window.location;
     }
 
-    return new URL(url);
+    return url;
 }
 
 // Default navigation state
-const idleNavigation: NavigationStates["Idle"] = {
+const idleNavigation: NavigatingStates["Idle"] = {
     state: "idle",
-    location: undefined,
-    formData: undefined,
+    to: null,
+    from: null,
+    formData: null,
 };
 
 type RouterState = {
     location: PageLocation;
-    to: Navigation;
-    from: PageLocation | null;
+    navigating: Navigating;
 };
 
-export function createRouter(url: string): Router {
+export function useRouter(url: URL): Router {
     const [state, setState] = createStore<RouterState>({
         location: getCurrentLocation(url),
-        to: structuredClone(idleNavigation),
-        from: null,
+        navigating: structuredClone(idleNavigation),
     });
 
     if (typeof document !== "undefined") {
         const onBefore = (event: TransitionBeforePreparationEvent) => {
             setState({
-                to: {
+                navigating: {
                     state: "submitting",
-                    location: event.to,
+                    to: event.to,
+                    from: event.from,
                     formData: event.formData,
                 },
-                from: event.from,
             });
         };
 
         const onAfter = () => {
             setState({
                 location: getCurrentLocation(url),
-                to: structuredClone(idleNavigation),
-                from: null,
+                navigating: structuredClone(idleNavigation),
             });
         };
 
@@ -190,14 +210,13 @@ export function createRouter(url: string): Router {
     }
 
     return {
-        get location() {
-            return state.location;
+        page: {
+            get location() {
+                return state.location;
+            },
         },
-        get to() {
-            return state.to;
-        },
-        get from() {
-            return state.from;
+        get navigating() {
+            return state.navigating;
         },
         async navigate(target, options) {
             if (
@@ -221,9 +240,9 @@ export function createRouter(url: string): Router {
                 state.location.pathname.includes(path.split("?").at(0)!);
         },
         isPending(path) {
-            return (state.to.location?.pathname === path ||
-                state.to.location?.pathname.startsWith(path) ||
-                state.to.location?.pathname.includes(path.split("?").at(0)!)) ??
+            return (state.navigating.to?.pathname === path ||
+                state.navigating.to?.pathname.startsWith(path) ||
+                state.navigating.to?.pathname.includes(path.split("?").at(0)!)) ??
                 false;
         },
     };

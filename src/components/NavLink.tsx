@@ -1,5 +1,5 @@
 import { children, type JSX, splitProps } from "solid-js";
-import { isActive, isPending } from "~/lib/router.tsx";
+import { isActive, isPending } from "../lib/router.ts";
 
 export interface NavLinkProps extends Omit<JSX.AnchorHTMLAttributes<HTMLAnchorElement>, "class"> {
     href: string;

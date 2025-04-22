@@ -52,6 +52,15 @@ button {
     color: #3992ff;
     font-weight: 500;
     cursor: pointer;
+    user-select: none;
+}
+
+input::placeholder {
+    user-select: none;
+}
+
+img {
+    user-select: none;
 }
 
 textarea:hover,
@@ -206,6 +215,7 @@ form[action$="delete"] button {
 #sidebar nav a span {
     float: right;
     color: #eeb004;
+    user-select: none;
 }
 #sidebar nav a.active span {
     color: inherit;
@@ -262,6 +272,8 @@ i {
 }
 
 #detail.loading {
+    pointer-events: none;
+    user-select: none;
     opacity: 0.25;
     transition: opacity 200ms;
     transition-delay: 200ms;

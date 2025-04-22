@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-explicit-any no-window
+// deno-lint-ignore-file no-window
 import {
     navigate as _navigate,
     type NavigationTypeString,
@@ -36,9 +36,8 @@ export interface NavigationTarget {
     url: URL;
 }
 
-export interface Page {
-    url: URL;
-    params: Record<string, string | undefined>;
+export interface Page extends NavigationTarget {
+    params?: Record<string, string | undefined>;
 }
 
 type NavigatingStates = {
@@ -102,7 +101,7 @@ const page = {
         return serverLocation()!;
     },
     get params() {
-        return serverParams() ?? {};
+        return serverParams();
     },
 };
 
@@ -141,33 +140,28 @@ async function _submit(target: SubmitTarget, options?: Options): Promise<void> {
         return;
     }
 
-    let entries: Iterable<[string, string]> = [];
+    type ToString = { toString(): string };
+    let entries: Iterable<[string, ToString | null]> = [];
     let search = new URLSearchParams();
 
     if (target instanceof HTMLFormElement) {
-        entries = new FormData(target).entries() as any;
+        entries = new FormData(target).entries();
     } else if (target instanceof HTMLButtonElement || target instanceof HTMLInputElement) {
-        const form = target.form;
-        if (!form) return;
-        const formData = new FormData(form);
-        // Add the button/input value if it has a name
-        if (target.name) {
-            formData.append(target.name, target.value);
-        }
-        entries = formData.entries() as any;
+        if (!target.form) return;
+        entries = new FormData(target.form).entries();
     } else if (target instanceof FormData) {
-        entries = target.entries() as any;
+        entries = target.entries();
     } else if (target instanceof URLSearchParams) {
         search = target;
     } else {
         // Handle JSON value
         if (typeof target === "object" && target !== null) {
-            entries = Object.entries(target) as any;
+            entries = Object.entries(target);
         }
     }
 
     for (const [key, value] of entries) {
-        search.append(key, value.toString());
+        if (value) search.append(key, value.toString());
     }
 
     await _navigate(

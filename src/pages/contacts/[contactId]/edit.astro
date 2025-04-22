@@ -1,0 +1,69 @@
+---
+import SidebarLayout from "~/layouts/SidebarLayout.astro";
+import { CancelButton } from "~/components/CancelButton";
+
+import { actions } from "astro:actions";
+import { getContactId } from "~/actions/get-contact-id";
+import { getContact } from "~/lib/contacts";
+
+const id = getContactId(Astro);
+const contact = await getContact(id);
+
+const result = Astro.getActionResult(actions.edit);
+if (result) {
+    if (!result.error) {
+        return Astro.redirect(`/contacts/${id}`);
+    }
+
+    console.error(result.error);
+}
+---
+
+<SidebarLayout title={`Editing ${contact.first} ${contact.last}`}>
+    <form method="POST" action={actions.edit} id="contact-form">
+        <p>
+            <span>Name</span>
+            <input
+                aria-label="First name"
+                value={contact.first ?? undefined}
+                name="first"
+                placeholder="First"
+                type="text"
+            />
+            <input
+                aria-label="Last name"
+                value={contact.last ?? undefined}
+                name="last"
+                placeholder="Last"
+                type="text"
+            />
+        </p>
+        <label>
+            <span>Bluesky</span>
+            <input
+                value={contact.bsky ?? undefined}
+                name="bsky"
+                placeholder="jay.bsky.team"
+                type="text"
+            />
+        </label>
+        <label>
+            <span>Avatar URL</span>
+            <input
+                aria-label="Avatar URL"
+                value={contact.avatar ?? undefined}
+                name="avatar"
+                placeholder="https://example.com/avatar.jpg"
+                type="text"
+            />
+        </label>
+        <label>
+            <span>Notes</span>
+            <textarea value={contact.notes ?? undefined} name="notes" rows={6} />
+        </label>
+        <p>
+            <button type="submit">Save</button>
+            <CancelButton client:load />
+        </p>
+    </form>
+</SidebarLayout>

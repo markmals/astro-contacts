@@ -1,0 +1,71 @@
+---
+import SidebarLayout from "~/layouts/SidebarLayout.astro";
+import { Favorite } from "~/components/Favorite.tsx";
+import { DeleteForm } from "~/components/DeleteForm.tsx";
+
+import { getContactId } from "~/actions/get-contact-id";
+import { getContact } from "~/lib/contacts";
+
+const id = getContactId(Astro);
+const contact = await getContact(id);
+const hasAvatar = !!contact.avatar;
+---
+
+<SidebarLayout title={`${contact.first} ${contact.last}`}>
+    <div id="contact">
+        <div>
+            <img
+                alt=""
+                src={hasAvatar
+                ? contact.avatar
+                : "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
+            />
+        </div>
+
+        <div>
+            <h1>
+                {
+                    contact.first || contact.last ? (
+                        <>
+                            {`${contact.first} ${contact.last}`}
+                        </>
+                    ) : <i>No Name</i>
+                }{" "}
+                <Favorite
+                    transition:name="favorite-button"
+                    client:load
+                    transition:persist
+                    url={Astro.request.url}
+                    id={contact.id}
+                    favorite={contact.favorite!}
+                />
+            </h1>
+
+            {
+                contact.bsky && (
+                    <p>
+                        <a
+                            href={`https://bsky.app/profile/${contact.bsky}`}
+                            rel="noreferrer"
+                            target="_blank"
+                        >
+                            @{contact.bsky}
+                        </a>
+                    </p>
+                )
+            }
+
+            {contact.notes && <p>{contact.notes}</p>}
+
+            <div>
+                <form action={`/contacts/${id}/edit`}>
+                    <button type="submit">Edit</button>
+                </form>
+                <DeleteForm url={Astro.request.url} client:load>
+                    <input type="hidden" name="id" value={id} />
+                    <button type="submit">Delete</button>
+                </DeleteForm>
+            </div>
+        </div>
+    </div>
+</SidebarLayout>

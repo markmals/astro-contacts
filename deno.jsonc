@@ -1,0 +1,56 @@
+{
+    "nodeModulesDir": "auto",
+    "unstable": ["fmt-component", "sloppy-imports"],
+    "fmt": {
+        "indentWidth": 4,
+        "lineWidth": 100,
+        "singleQuote": false,
+        "proseWrap": "always"
+    },
+    "tasks": {
+        "dev": {
+            "command": "deno run -A npm:astro dev",
+            "dependencies": ["patch-libsql"]
+        },
+        "build": {
+            "command": "deno run -A npm:astro build",
+            "dependencies": ["typecheck", "patch-libsql"]
+        },
+        "preview": {
+            "command": "deno run --A ./dist/server/entry.mjs",
+            "dependencies": ["build"]
+        },
+        "fmt": "deno fmt .",
+        "typegen": "deno run -A npm:astro sync",
+        "typecheck": {
+            "command": "deno check ./src",
+            "dependencies": ["typegen"]
+        },
+        "patch-libsql": "find ./node_modules/.deno -path '*/@libsql/client/package.json' -exec sed -i -e 's/\"deno\"/\"no-deno\"/' '{}' +"
+    },
+    "imports": {
+        "~/": "./src/",
+
+        "@astrojs/db": "npm:@astrojs/db@^0.14.11",
+        "@astrojs/react": "npm:@astrojs/react@^4.2.4",
+        "@deno/astro-adapter": "npm:@deno/astro-adapter@^0.3.0",
+        "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
+        "@types/react": "npm:@types/react@^19.1.2",
+        "@types/react-dom": "npm:@types/react-dom@^19.1.0",
+        "@types/sort-by": "npm:@types/sort-by@^1.2.3",
+        "astro": "npm:astro@^5.7.4",
+        "babel-plugin-react-compiler": "npm:babel-plugin-react-compiler@^19.0.0-beta-ebf51a3-20250411",
+        "match-sorter": "npm:match-sorter@^8.0.0",
+        "react": "npm:react@^19.1.0",
+        "react-dom": "npm:react-dom@^19.1.0",
+        "sort-by": "npm:sort-by@^1.2.0"
+    },
+    "compilerOptions": {
+        "strict": true,
+        "lib": ["Deno.NS", "DOM", "DOM.Iterable", "ES2022"],
+        "jsx": "react-jsx",
+        "types": [".astro/types.d.ts"],
+        "checkJs": true,
+        "verbatimModuleSyntax": true
+    }
+}

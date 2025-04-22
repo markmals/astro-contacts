@@ -1,0 +1,24 @@
+---
+import { ClientRouter } from "astro:transitions";
+import styles from "~/index.css?url";
+
+export interface Props {
+    title?: string;
+}
+
+const { title } = Astro.props;
+---
+
+<html lang="en" transition:animate="none">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link rel="stylesheet" href={styles} />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <title>{title ? `${title} | Astro Contacts` : "Astro Contacts"}</title>
+        <ClientRouter fallback="none" />
+    </head>
+    <body>
+        <slot />
+    </body>
+</html>

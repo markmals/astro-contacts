@@ -1,0 +1,59 @@
+---
+import Document from "~/layouts/Document.astro";
+import { Details, SearchBar, SidebarItem } from "~/components/RootLayout.tsx";
+import { getContacts } from "~/lib/contacts.ts";
+import { actions } from "astro:actions";
+
+const q = Astro.url.searchParams.get("q") ?? undefined;
+const contacts = await getContacts(q);
+
+export interface Props {
+    title?: string;
+}
+
+const { title } = Astro.props;
+---
+
+<Document {title}>
+    <div id="root">
+        <div id="sidebar">
+            <h1>Astro Contacts</h1>
+            <div>
+                <form id="search-form">
+                    <SearchBar url={Astro.request.url} transition:persist client:load query={q} />
+                </form>
+                <form method="POST" action={actions.newContact}>
+                    <button type="submit">New</button>
+                </form>
+            </div>
+            <nav>
+                {
+                    contacts.length ? (
+                        <ul>
+                            {
+                                contacts.map((
+                            contact,
+                        ) => (
+                                    <SidebarItem
+                                        transition:name={`contact-sidebar-${contact.id}`}
+                                        client:load
+                                        {contact}
+                                        url={Astro.request.url}
+                                        search={Astro.url.search}
+                                    />
+                                ))
+                            }
+                        </ul>
+                    ) : (
+                        <p>
+                            <i>No contacts</i>
+                        </p>
+                    )
+                }
+            </nav>
+        </div>
+        <Details client:load url={Astro.request.url}>
+            <slot />
+        </Details>
+    </div>
+</Document>

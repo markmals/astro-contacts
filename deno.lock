@@ -1,9 +1,6 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@std/assert@^1.0.12": "1.0.12",
-    "jsr:@std/async@^1.0.12": "1.0.12",
-    "jsr:@std/internal@^1.0.6": "1.0.6",
     "npm:@astrojs/db@~0.14.11": "0.14.11_@libsql+client@0.15.4_@types+react@19.1.2_react@19.1.0",
     "npm:@astrojs/react@^4.2.4": "4.2.4_@types+react@19.1.2_@types+react-dom@19.1.2__@types+react@19.1.2_react@19.1.0_react-dom@19.1.0__react@19.1.0_vite@6.3.2__picomatch@4.0.2",
     "npm:@deno/astro-adapter@0.3": "0.3.0_astro@5.7.4__vite@6.3.2___picomatch@4.0.2__zod@3.24.3",
@@ -18,20 +15,6 @@
     "npm:react-dom@^19.1.0": "19.1.0_react@19.1.0",
     "npm:react@^19.1.0": "19.1.0",
     "npm:sort-by@^1.2.0": "1.2.0"
-  },
-  "jsr": {
-    "@std/assert@1.0.12": {
-      "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
-      "dependencies": [
-        "jsr:@std/internal"
-      ]
-    },
-    "@std/async@1.0.12": {
-      "integrity": "d1bfcec459e8012846fe4e38dfc4241ab23240ecda3d8d6dfcf6d81a632e803d"
-    },
-    "@std/internal@1.0.6": {
-      "integrity": "9533b128f230f73bd209408bb07a4b12f8d4255ab2a4d22a1fd6d87304aca9a4"
-    }
   },
   "npm": {
     "@ampproject/remapping@2.3.0": {
@@ -2569,8 +2552,6 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@^1.0.12",
-      "jsr:@std/async@^1.0.12",
       "npm:@astrojs/db@~0.14.11",
       "npm:@astrojs/react@^4.2.4",
       "npm:@deno/astro-adapter@0.3",

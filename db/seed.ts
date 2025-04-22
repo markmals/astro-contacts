@@ -3,67 +3,51 @@ import { Contacts, db } from "astro:db";
 const contacts = [
     {
         id: 1,
-        first: "Scott",
-        last: "Spence",
+        first: "Matt",
+        last: "Kane",
         avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:nlvjelw3dy3pddq7qoglleko/bafkreiaqu3qfrl26nypgrxeu4wfnqsq2ag42yqd6rn6gxqgpvvktorkq64@jpeg",
-        bsky: "scottspence.dev",
+            "https://cdn.bsky.app/img/avatar/plain/did:plc:uwbl4k3tza7eyjv3morkrld2/bafkreic4mwsbm2tmuonamj4jq4kcjofk35bwics2f4oorp57f3cdfusjwu@jpeg",
+        bsky: "mk.gg",
     },
     {
         id: 2,
-        first: "Rich",
-        last: "Harris",
+        first: "Sarah",
+        last: "Rainsberger",
         avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:anvvmj5rdxhzo26gmhkgshnn/bafkreieqfihmtopurx4we54kpagzs2sjj7hj4wqxfge577zamucv5hctyy@jpeg",
-        bsky: "rich-harris.dev",
+            "https://cdn.bsky.app/img/avatar/plain/did:plc:iwhvwluesbbqtslwwdzgiize/bafkreid5ropmhzl6an6lpeanulki3szk6wmsrgtbal6t2s7pyai7oxtamu@jpeg",
+        bsky: "sarah11918.rainsberger.ca",
     },
     {
         id: 3,
-        first: "Geoff",
-        last: "Rich",
+        first: "Matthew",
+        last: "Phillips",
         avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:4ug4zefdc7ll77reridekvob/bafkreic5ynvjzjnlxqma6v2vyoq3x7khglhcye4xv5yjmlylfw4ypttzpi@jpeg",
-        bsky: "geoffrich.net",
+            "https://cdn.bsky.app/img/avatar/plain/did:plc:eu6cezqsf5yocjsyc7mgkued/bafkreihjrnlfs5fnnuiaoy3yvs46kj6u7ct66jahywrjdmyygzsnuwq57i@jpeg",
+        bsky: "fancypenguin.party",
     },
     {
         id: 4,
-        first: "Zeu",
-        last: "Capua",
+        first: "Nate",
+        last: "Moore",
         avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:gotnvwkr56ibs33l4hwgfoet/bafkreiexsjrizpdiueowsgccs6g4gjbwbxxw4onpildffnblgwy7y37xm4@jpeg",
-        bsky: "zeu.dev",
+            "https://cdn.bsky.app/img/avatar/plain/did:plc:i2r4fkz7ge35u5tbcj2ntasf/bafkreie4tt3cg6buvj3ynctxibsbboa6zb7k4azctzmgcr67uqdspgxvly@jpeg",
+        bsky: "natemoo.re",
     },
     {
         id: 5,
-        first: "Thomas G.",
-        last: "Lopes",
+        first: "Fred K.",
+        last: "Schott",
         avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:iovdj5ueqtsozoy522a6olwh/bafkreigcyy2ahawo5ytuzbogsww7lqkkxlriuvkkgr76r67bfdfg3pnq4q@jpeg",
-        bsky: "thomas.rocks",
+            "https://cdn.bsky.app/img/avatar/plain/did:plc:beykws7vcyhkoykt54xp2d7y/bafkreif3ik7bkuua7a3qwi2iie5242npoadnh6tiryuuebc3o3d5z5tzta@jpeg",
+        bsky: "fks.bsky.social",
     },
     {
         id: 9,
-        first: "Jacob",
-        last: "Stordahl",
+        first: "Ben",
+        last: "Holmes",
         avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:6ghbu76mogjyfcvx446mep5o/bafkreicuurghr37bo6zvzyciw72ximnc7ul7nmzftvoba5qyfpeoksawhq@jpeg",
-        bsky: "stordahl.dev",
-    },
-    {
-        id: 7,
-        first: "Paolo",
-        last: "Ricciuti",
-        avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:ezyrzvz3yoglekd4j2szmiys/bafkreifetdim5ejuljgqfn2jdfi5wb5luobv7w6mefltxn7fcckcpmsru4@jpeg",
-        bsky: "paolo.ricciuti.me",
-    },
-    {
-        id: 8,
-        first: "Jean-Yves",
-        last: "Couët",
-        avatar:
-            "https://cdn.bsky.app/img/avatar/plain/did:plc:dacfxuonkf2qtqft22sc23tu/bafkreiazc3bhbehq5j6wtrretqjlouat672wno2tdetekhpfygh6xzsjeq@jpeg",
-        bsky: "jyc.dev",
+            "https://cdn.bsky.app/img/avatar/plain/did:plc:koeuzndo64sdkjw5bylojck6/bafkreicawmpmrxcgnrf5b5bhsge5w2wznbksx45gm6gsb6ktcmquj7zka4@jpeg",
+        bsky: "bholmes.dev",
     },
 ];
 

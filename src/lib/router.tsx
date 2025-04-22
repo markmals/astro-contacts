@@ -1,12 +1,13 @@
 // deno-lint-ignore-file no-explicit-any no-window
 import {
-    navigate,
+    navigate as _navigate,
     type NavigationTypeString,
     type Options,
     type TransitionBeforePreparationEvent,
 } from "astro:transitions/client";
+import ClientRouter from "../components/ClientRouter.astro";
 
-import { createSignal, onCleanup, onMount, untrack } from "solid-js";
+import { createSignal, untrack } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
 type JsonObject =
@@ -65,6 +66,11 @@ type NavigatingStates = {
 };
 type Navigating = NavigatingStates[keyof NavigatingStates];
 
+export type NavigateFunc = {
+    (to: To, options?: Options): Promise<void>;
+    (target: SubmitTarget, options?: Options): Promise<void>;
+};
+
 export const BROWSER = typeof document !== "undefined";
 
 const idleNavigation: NavigatingStates["Idle"] = {
@@ -85,43 +91,30 @@ export function unsafe_provideServerParams(params: Record<string, string | undef
     setServerParams(params);
 }
 
-export type Router = {
-    page: Page;
-    navigating: Navigating;
+const [clientLocation, setClientLocation] = createSignal<URL>();
+function refreshClientLocation() {
+    setClientLocation(new URL(window.location.href));
+}
 
-    navigate(to: To, options?: Options): Promise<void>;
-    navigate(target: SubmitTarget, options?: Options): Promise<void>;
-
-    revalidate(): Promise<void>;
-
-    isActive(path: string): boolean;
-    isPending(path: string): boolean;
+const page = {
+    get url(): URL {
+        if (BROWSER) return clientLocation()!;
+        return serverLocation()!;
+    },
+    get params() {
+        return serverParams() ?? {};
+    },
 };
 
-export function useRouter(): Router {
-    const [clientLocation, setClientLocation] = createSignal<URL>();
-    function refreshClientLocation() {
-        setClientLocation(new URL(window.location.href));
+const [navigating, setNavigating] = createStore<Navigating>(structuredClone(idleNavigation));
+
+if (BROWSER) {
+    if (!untrack(clientLocation)) {
+        refreshClientLocation();
     }
 
-    const page = {
-        get url(): URL {
-            if (BROWSER) return clientLocation()!;
-            return serverLocation()!;
-        },
-        get params() {
-            return serverParams() ?? {};
-        },
-    };
-
-    const [navigating, setNavigating] = createStore<Navigating>(structuredClone(idleNavigation));
-
-    if (BROWSER) {
-        if (!untrack(clientLocation)) {
-            refreshClientLocation();
-        }
-
-        const onBefore = (event: TransitionBeforePreparationEvent) => {
+    const beforePreparation: EventListenerObject = {
+        handleEvent(event: TransitionBeforePreparationEvent) {
             setNavigating(reconcile({
                 state: (event.formData ? "submitting" : "loading") as "submitting",
                 formData: event.formData,
@@ -129,99 +122,92 @@ export function useRouter(): Router {
                 to: { url: event.to },
                 from: { url: event.from },
             }));
-        };
-
-        const onAfter = () => {
-            refreshClientLocation();
-            setNavigating(reconcile(structuredClone(idleNavigation)));
-        };
-
-        onMount(() => {
-            document.addEventListener("astro:before-preparation", onBefore);
-            document.addEventListener("astro:after-swap", onAfter);
-        });
-
-        onCleanup(() => {
-            document.removeEventListener("astro:before-preparation", onBefore);
-            document.removeEventListener("astro:after-swap", onAfter);
-        });
-    }
-
-    async function submit(target: SubmitTarget, options?: Options): Promise<void> {
-        if (!target) {
-            return;
-        }
-
-        let entries: Iterable<[string, string]> = [];
-        let search = new URLSearchParams();
-
-        if (target instanceof HTMLFormElement) {
-            entries = new FormData(target).entries() as any;
-        } else if (target instanceof HTMLButtonElement || target instanceof HTMLInputElement) {
-            const form = target.form;
-            if (!form) return;
-            const formData = new FormData(form);
-            // Add the button/input value if it has a name
-            if (target.name) {
-                formData.append(target.name, target.value);
-            }
-            entries = formData.entries() as any;
-        } else if (target instanceof FormData) {
-            entries = target.entries() as any;
-        } else if (target instanceof URLSearchParams) {
-            search = target;
-        } else {
-            // Handle JSON value
-            if (typeof target === "object" && target !== null) {
-                entries = Object.entries(target) as any;
-            }
-        }
-
-        for (const [key, value] of entries) {
-            search.append(key, value.toString());
-        }
-
-        await navigate(
-            `${page.url.pathname === "/" ? "" : page.url.pathname}?${search}`,
-            options,
-        );
-    }
-
-    return {
-        page,
-        navigating,
-        async navigate(target, options) {
-            if (
-                target instanceof HTMLFormElement ||
-                target instanceof HTMLButtonElement ||
-                target instanceof HTMLInputElement ||
-                target instanceof FormData ||
-                target instanceof URLSearchParams ||
-                typeof target === "boolean" ||
-                (target !== null && typeof target === "object") ||
-                target === null
-            ) {
-                return await submit(target, options);
-            }
-
-            return await navigate(target.toString(), options);
-        },
-        async revalidate() {
-            await navigate(page.url.pathname);
-        },
-        isActive(path) {
-            return page.url.pathname === path ||
-                page.url.pathname.startsWith(path) ||
-                page.url.pathname.includes(path.split("?").at(0)!);
-        },
-        isPending(path) {
-            return (navigating.to?.url.pathname === path ||
-                navigating.to?.url.pathname.startsWith(path) ||
-                navigating.to?.url.pathname.includes(path.split("?").at(0)!)) ??
-                false;
         },
     };
+
+    const afterSwap: EventListenerObject = {
+        handleEvent() {
+            refreshClientLocation();
+            setNavigating(reconcile(structuredClone(idleNavigation)));
+        },
+    };
+
+    document.addEventListener("astro:before-preparation", beforePreparation);
+    document.addEventListener("astro:after-swap", afterSwap);
 }
 
-import ClientRouter from "../components/ClientRouter.astro";
-export { ClientRouter };
+async function _submit(target: SubmitTarget, options?: Options): Promise<void> {
+    if (!target) {
+        return;
+    }
+
+    let entries: Iterable<[string, string]> = [];
+    let search = new URLSearchParams();
+
+    if (target instanceof HTMLFormElement) {
+        entries = new FormData(target).entries() as any;
+    } else if (target instanceof HTMLButtonElement || target instanceof HTMLInputElement) {
+        const form = target.form;
+        if (!form) return;
+        const formData = new FormData(form);
+        // Add the button/input value if it has a name
+        if (target.name) {
+            formData.append(target.name, target.value);
+        }
+        entries = formData.entries() as any;
+    } else if (target instanceof FormData) {
+        entries = target.entries() as any;
+    } else if (target instanceof URLSearchParams) {
+        search = target;
+    } else {
+        // Handle JSON value
+        if (typeof target === "object" && target !== null) {
+            entries = Object.entries(target) as any;
+        }
+    }
+
+    for (const [key, value] of entries) {
+        search.append(key, value.toString());
+    }
+
+    await _navigate(
+        `${page.url.pathname === "/" ? "" : page.url.pathname}?${search}`,
+        options,
+    );
+}
+
+export const navigate: NavigateFunc = async (target, options) => {
+    if (
+        target instanceof HTMLFormElement ||
+        target instanceof HTMLButtonElement ||
+        target instanceof HTMLInputElement ||
+        target instanceof FormData ||
+        target instanceof URLSearchParams ||
+        typeof target === "boolean" ||
+        (target !== null && typeof target === "object") ||
+        target === null
+    ) {
+        return await _submit(target, options);
+    }
+
+    return await _navigate(target.toString(), options);
+};
+
+export async function revalidate(): Promise<void> {
+    await _navigate(page.url.pathname);
+}
+
+export function isActive(path: string): boolean {
+    return page.url.pathname === path ||
+        page.url.pathname.startsWith(path) ||
+        page.url.pathname.includes(path.split("?").at(0)!);
+}
+
+export function isPending(path: string): boolean {
+    return (navigating.to?.url.pathname === path ||
+        navigating.to?.url.pathname.startsWith(path) ||
+        navigating.to?.url.pathname.includes(path.split("?").at(0)!)) ??
+        false;
+}
+
+export { ClientRouter, navigating, page };

@@ -1,10 +1,9 @@
 import type { Contact } from "~/lib/contacts.ts";
 import { type ParentProps, Show } from "solid-js";
-import { useRouter } from "~/lib/router.tsx";
+import { navigate, navigating, page } from "~/lib/router.tsx";
 import { NavLink } from "~/components/NavLink.tsx";
 
 export function SearchBar(props: { query?: string }) {
-    const { page, navigating, navigate } = useRouter();
     const previousSearchParams = () => navigating.from?.url.search || "";
     const nextSearchParams = () => navigating.to?.url.search || "";
 
@@ -46,7 +45,6 @@ export function SearchBar(props: { query?: string }) {
 }
 
 export function SidebarItem(props: { contact: Contact }) {
-    const { page } = useRouter();
     const href = () => `/contacts/${props.contact.id}${page.url.search}`;
 
     return (
@@ -68,10 +66,13 @@ export function SidebarItem(props: { contact: Contact }) {
 }
 
 export function Details(props: ParentProps) {
-    const { navigating } = useRouter();
-
     return (
-        <div id="detail" class={navigating.state === "loading" ? "loading" : ""}>
+        <div
+            id="detail"
+            class={navigating.state === "loading" || navigating.state === "submitting"
+                ? "loading"
+                : ""}
+        >
             {props.children}
         </div>
     );

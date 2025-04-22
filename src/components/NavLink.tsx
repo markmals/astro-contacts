@@ -1,5 +1,5 @@
 import { children, type JSX, splitProps } from "solid-js";
-import { useRouter } from "~/lib/router.tsx";
+import { isActive, isPending } from "~/lib/router.tsx";
 
 export interface NavLinkProps extends Omit<JSX.AnchorHTMLAttributes<HTMLAnchorElement>, "class"> {
     href: string;
@@ -11,7 +11,6 @@ export interface NavLinkProps extends Omit<JSX.AnchorHTMLAttributes<HTMLAnchorEl
 }
 
 export function NavLink(props: NavLinkProps) {
-    const { isActive, isPending } = useRouter();
     const [_, rest] = splitProps(props, ["children", "class"]);
     const resolved = children(() => props.children);
     const state = {

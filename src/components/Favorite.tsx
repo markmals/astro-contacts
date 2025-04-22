@@ -1,10 +1,9 @@
 import { actions } from "astro:actions";
 import { createSignal, Show } from "solid-js";
-import { useRouter } from "~/lib/router.tsx";
+import { revalidate } from "~/lib/router.tsx";
 import { createOptimistic } from "~/lib/optimistic.ts";
 
 export function Favorite(props: { id: number; favorite: boolean }) {
-    const { revalidate } = useRouter();
     const [favorite, setFavorite] = createOptimistic(() => props.favorite);
     const [loading, setLoading] = createSignal(false);
 

@@ -4,7 +4,9 @@ import {
     type Options,
     type TransitionBeforePreparationEvent,
 } from "astro:transitions/client";
-import { useEffect, useState } from "react";
+
+import { onCleanup, onMount } from "solid-js";
+import { createStore } from "solid-js/store";
 
 type JsonObject =
     & {
@@ -103,46 +105,49 @@ const idleNavigation: NavigationStates["Idle"] = {
     formData: undefined,
 };
 
-export function useRouter(url: string): Router {
-    const [currentLocation, setLocation] = useState<PageLocation>(
-        getCurrentLocation(url),
-    );
-    const [to, setTo] = useState<Navigation>(idleNavigation);
-    const [from, setFrom] = useState<PageLocation | null>(null);
+type RouterState = {
+    location: PageLocation;
+    to: Navigation;
+    from: PageLocation | null;
+};
 
-    useEffect(() => {
+export function createRouter(url: string): Router {
+    const [state, setState] = createStore<RouterState>({
+        location: getCurrentLocation(url),
+        to: structuredClone(idleNavigation),
+        from: null,
+    });
+
+    if (typeof document !== "undefined") {
         const onBefore = (event: TransitionBeforePreparationEvent) => {
-            if (event.formData) {
-                setTo({
+            setState({
+                to: {
                     state: "submitting",
                     location: event.to,
                     formData: event.formData,
-                });
-                setFrom(event.from);
-            } else {
-                setTo({
-                    state: "loading",
-                    location: event.to,
-                    formData: undefined,
-                });
-                setFrom(event.from);
-            }
+                },
+                from: event.from,
+            });
         };
 
         const onAfter = () => {
-            setLocation(getCurrentLocation(url));
-            setTo(idleNavigation);
-            setFrom(null);
+            setState({
+                location: getCurrentLocation(url),
+                to: structuredClone(idleNavigation),
+                from: null,
+            });
         };
 
-        document.addEventListener("astro:before-preparation", onBefore);
-        document.addEventListener("astro:after-swap", onAfter);
+        onMount(() => {
+            document.addEventListener("astro:before-preparation", onBefore);
+            document.addEventListener("astro:after-swap", onAfter);
+        });
 
-        return () => {
+        onCleanup(() => {
             document.removeEventListener("astro:before-preparation", onBefore);
             document.removeEventListener("astro:after-swap", onAfter);
-        };
-    }, [url, setLocation, setTo, setFrom]);
+        });
+    }
 
     async function submit(target: SubmitTarget, options?: Options): Promise<void> {
         if (!target) {
@@ -179,15 +184,21 @@ export function useRouter(url: string): Router {
         }
 
         await navigate(
-            `${currentLocation.pathname === "/" ? "" : currentLocation.pathname}?${search}`,
+            `${state.location.pathname === "/" ? "" : state.location.pathname}?${search}`,
             options,
         );
     }
 
     return {
-        location: currentLocation,
-        to,
-        from,
+        get location() {
+            return state.location;
+        },
+        get to() {
+            return state.to;
+        },
+        get from() {
+            return state.from;
+        },
         async navigate(target, options) {
             if (
                 target instanceof HTMLFormElement ||
@@ -205,13 +216,14 @@ export function useRouter(url: string): Router {
             return await navigate(target.toString(), options);
         },
         isActive(path) {
-            return currentLocation.pathname === path ||
-                currentLocation.pathname.startsWith(path) ||
-                currentLocation.pathname.includes(path.split("?").at(0)!);
+            return state.location.pathname === path ||
+                state.location.pathname.startsWith(path) ||
+                state.location.pathname.includes(path.split("?").at(0)!);
         },
         isPending(path) {
-            return (to.location?.pathname === path || to.location?.pathname.startsWith(path) ||
-                to.location?.pathname.includes(path.split("?").at(0)!)) ??
+            return (state.to.location?.pathname === path ||
+                state.to.location?.pathname.startsWith(path) ||
+                state.to.location?.pathname.includes(path.split("?").at(0)!)) ??
                 false;
         },
     };

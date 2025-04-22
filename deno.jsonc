@@ -32,23 +32,21 @@
         "~/": "./src/",
 
         "@astrojs/db": "npm:@astrojs/db@^0.14.11",
-        "@astrojs/react": "npm:@astrojs/react@^4.2.4",
+        "@astrojs/solid-js": "npm:@astrojs/solid-js@^5.0.8",
         "@deno/astro-adapter": "npm:@deno/astro-adapter@^0.3.0",
         "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
-        "@types/react": "npm:@types/react@^19.1.2",
-        "@types/react-dom": "npm:@types/react-dom@^19.1.0",
         "@types/sort-by": "npm:@types/sort-by@^1.2.3",
         "astro": "npm:astro@^5.7.4",
         "babel-plugin-react-compiler": "npm:babel-plugin-react-compiler@^19.0.0-beta-ebf51a3-20250411",
         "match-sorter": "npm:match-sorter@^8.0.0",
-        "react": "npm:react@^19.1.0",
-        "react-dom": "npm:react-dom@^19.1.0",
+        "solid-js": "npm:solid-js@^1.9.5",
         "sort-by": "npm:sort-by@^1.2.0"
     },
     "compilerOptions": {
         "strict": true,
         "lib": ["Deno.NS", "DOM", "DOM.Iterable", "ES2022"],
         "jsx": "react-jsx",
+        "jsxImportSource": "solid-js",
         "types": [".astro/types.d.ts"],
         "checkJs": true,
         "verbatimModuleSyntax": true

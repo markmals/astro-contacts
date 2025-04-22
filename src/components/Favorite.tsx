@@ -1,40 +1,44 @@
 import { actions } from "astro:actions";
-import { useEffect, useState } from "react";
-import { useRouter } from "~/lib/useRouter.ts";
+import { createRouter } from "~/lib/router.ts";
+import { createComputed, createSignal, Show, untrack } from "solid-js";
 
-// Real `useOptimistic` doesn't work because it depends on the React Server Actions lifecycle
-// which Astro does not implement as part of Astro Actions
-function useOptimistic<T>(value: T) {
-    const [state, setState] = useState(value);
-    useEffect(() => setState(value), [value]);
+function createOptimistic<T>(value: () => T) {
+    const [state, setState] = createSignal(untrack(value));
+    // deno-lint-ignore no-explicit-any
+    createComputed(() => setState(value() as any));
     return [state, setState] as const;
 }
 
 export function Favorite(props: { id: number; favorite: boolean; url: string }) {
-    const router = useRouter(props.url);
-    const [favorited, setFavorited] = useOptimistic(props.favorite);
-    const [loading, setLoading] = useState(false);
+    const router = createRouter(props.url);
+    const [favorited, setFavorited] = createOptimistic(() => props.favorite);
+    const [loading, setLoading] = createSignal(false);
 
-    function favorite(formData: FormData) {
-        setFavorited(!favorited);
-        setLoading(true);
+    async function enhance(event: SubmitEvent & { currentTarget: HTMLFormElement }) {
+        event.preventDefault();
 
-        actions.favorite(formData)
-            .then(() => router.navigate(router.location.pathname))
-            .then(() => setLoading(false));
+        setFavorited((favorited) => !favorited);
+        setLoading((l) => !l);
+
+        await actions.favorite(new FormData(event.currentTarget));
+        await router.navigate(router.location.pathname);
+
+        setLoading((l) => !l);
     }
 
     return (
-        <form action={favorite}>
+        <form method="post" action={actions.favorite} onSubmit={enhance}>
             <input type="hidden" name="id" value={props.id} />
             <button
-                aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+                aria-label={favorited() ? "Remove from favorites" : "Add to favorites"}
                 name="favorite"
                 type="submit"
-                value={favorited ? "false" : "true"}
-                disabled={loading}
+                value={favorited() ? "false" : "true"}
+                disabled={loading()}
             >
-                {favorited ? "★" : "☆"}
+                <Show when={favorited()} fallback="☆">
+                    ★
+                </Show>
             </button>
         </form>
     );

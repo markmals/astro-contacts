@@ -95,7 +95,7 @@ button:disabled {
     color: #eeb004;
 }
 
-form[data-destroy] button {
+form[action$="destroy"] button {
     color: #f44250;
 }
 

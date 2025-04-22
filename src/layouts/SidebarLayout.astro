@@ -22,7 +22,7 @@ const { title } = Astro.props;
                 <form id="search-form">
                     <SearchBar url={Astro.request.url} transition:persist client:load query={q} />
                 </form>
-                <form method="POST" action={actions.newContact}>
+                <form method="post" action={actions.newContact}>
                     <button type="submit">New</button>
                 </form>
             </div>

@@ -1,12 +1,12 @@
 import type { Contact } from "~/lib/contacts.ts";
-import { useRouter } from "~/lib/router.ts";
 import { type ParentProps, Show } from "solid-js";
+import { useRouter } from "~/lib/router.tsx";
+import { NavLink } from "~/components/NavLink.tsx";
 
-export function SearchBar(props: { query?: string; url: URL }) {
-    const router = useRouter(props.url);
-
-    const previousSearchParams = () => router.navigating.from?.search || "";
-    const nextSearchParams = () => router.navigating.to?.search || "";
+export function SearchBar(props: { query?: string }) {
+    const { page, navigating, navigate } = useRouter();
+    const previousSearchParams = () => navigating.from?.url.search || "";
+    const nextSearchParams = () => navigating.to?.url.search || "";
 
     const searching = () =>
         Boolean(
@@ -14,15 +14,15 @@ export function SearchBar(props: { query?: string; url: URL }) {
                 new URLSearchParams(nextSearchParams()).has("q"),
         );
 
-    async function enhance(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    async function search(event: InputEvent & { currentTarget: HTMLInputElement }) {
         // Remove empty query params when value is empty
         if (!event.currentTarget.value) {
-            await router.navigate(router.page.location.pathname);
+            await navigate(page.url.pathname);
             return;
         }
 
         const isFirstSearch = props.query === undefined;
-        await router.navigate(event.currentTarget.form, {
+        await navigate(event.currentTarget.form, {
             history: !isFirstSearch ? "replace" : "push",
         });
     }
@@ -31,50 +31,47 @@ export function SearchBar(props: { query?: string; url: URL }) {
         <>
             <input
                 aria-label="Search contacts"
-                class={searching() ? "loading" : ""}
+                class={searching() ? "loading" : undefined}
                 value={props.query ?? ""}
                 id="q"
                 name="q"
-                onInput={enhance}
+                onInput={search}
                 placeholder="Search"
                 type="search"
             />
-            <div aria-hidden hidden={!searching()} id="search-spinner" />
+            <div bool:aria-hidden={!searching()} hidden={!searching()} id="search-spinner" />
             <div aria-live="polite" class="sr-only" />
         </>
     );
 }
 
-export interface SidebarItemProps {
-    contact: Contact;
-    url: URL;
-}
-
-export function SidebarItem(props: SidebarItemProps) {
-    const router = useRouter(props.url);
-    const href = () => `/contacts/${props.contact.id}${props.url.search}`;
-    const className = () =>
-        router.isActive(href()) ? "active" : router.isPending(href()) ? "pending" : undefined;
+export function SidebarItem(props: { contact: Contact }) {
+    const { page } = useRouter();
+    const href = () => `/contacts/${props.contact.id}${page.url.search}`;
 
     return (
         <li>
-            <a href={href()} class={className()}>
+            <NavLink
+                href={href()}
+                class={(state) =>
+                    state.isActive ? "active" : state.isPending ? "pending" : undefined}
+            >
                 <Show when={props.contact.first || props.contact.last} fallback={<i>No Name</i>}>
                     {props.contact.first} {props.contact.last}
                 </Show>
                 <Show when={props.contact.favorite}>
                     <span>★</span>
                 </Show>
-            </a>
+            </NavLink>
         </li>
     );
 }
 
-export function Details(props: ParentProps & { url: URL }) {
-    const router = useRouter(props.url);
+export function Details(props: ParentProps) {
+    const { navigating } = useRouter();
 
     return (
-        <div id="detail" class={router.navigating.state === "loading" ? "loading" : ""}>
+        <div id="detail" class={navigating.state === "loading" ? "loading" : ""}>
             {props.children}
         </div>
     );

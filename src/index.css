@@ -95,7 +95,7 @@ button:disabled {
     color: #eeb004;
 }
 
-form[action$="destroy"] button {
+form[action$="delete"] button {
     color: #f44250;
 }
 

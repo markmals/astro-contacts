@@ -5,6 +5,16 @@ import { DeleteForm } from "~/components/DeleteForm.tsx";
 
 import { getContactId } from "~/actions/get-contact-id";
 import { getContact } from "~/lib/contacts";
+import { actions } from "astro:actions";
+
+const result = Astro.getActionResult(actions.delete);
+if (result) {
+    if (!result.error) {
+        return Astro.redirect("/");
+    }
+
+    console.error(result.error);
+}
 
 const id = getContactId(Astro);
 const contact = await getContact(id);
@@ -37,7 +47,6 @@ const hasAvatar = !!contact.avatar;
                     transition:name="favorite-button"
                     favorite={contact.favorite!}
                     id={contact.id}
-                    url={Astro.url}
                 />
             </h1>
 
@@ -61,7 +70,7 @@ const hasAvatar = !!contact.avatar;
                 <form action={`/contacts/${id}/edit`}>
                     <button type="submit">Edit</button>
                 </form>
-                <DeleteForm client:load url={Astro.url}>
+                <DeleteForm client:load>
                     <input type="hidden" name="id" value={id} />
                     <button type="submit">Delete</button>
                 </DeleteForm>

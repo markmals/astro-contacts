@@ -1,0 +1,9 @@
+---
+import { ClientRouter as ViewTransitionsRouter } from "astro:transitions";
+import { unsafe_provideServerParams, unsafe_provideServerURL } from "~/lib/router";
+
+unsafe_provideServerURL(Astro.url);
+unsafe_provideServerParams(Astro.params);
+---
+
+<ViewTransitionsRouter fallback="none" />

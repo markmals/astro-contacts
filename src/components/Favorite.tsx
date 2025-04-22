@@ -1,33 +1,35 @@
 import { actions } from "astro:actions";
-import { useRouter } from "~/lib/router.ts";
-import { createComputed, createSignal, Show, untrack } from "solid-js";
+import { createSignal, Show } from "solid-js";
+import { useRouter } from "~/lib/router.tsx";
+import { createOptimistic } from "~/lib/optimistic.ts";
 
-function createOptimistic<T>(value: () => T) {
-    const [state, setState] = createSignal(untrack(value));
-    // deno-lint-ignore no-explicit-any
-    createComputed(() => setState(value() as any));
-    return [state, setState] as const;
-}
-
-export function Favorite(props: { id: number; favorite: boolean; url: URL }) {
-    const router = useRouter(props.url);
+export function Favorite(props: { id: number; favorite: boolean }) {
+    const { revalidate } = useRouter();
     const [favorite, setFavorite] = createOptimistic(() => props.favorite);
     const [loading, setLoading] = createSignal(false);
 
-    async function enhance(event: SubmitEvent & { currentTarget: HTMLFormElement }) {
+    function optimisticallyToggleFavorite() {
+        setFavorite((favorited) => !favorited);
+    }
+
+    function toggleLoading() {
+        setLoading((isLoading) => !isLoading);
+    }
+
+    async function toggleFavorite(event: SubmitEvent & { currentTarget: HTMLFormElement }) {
         event.preventDefault();
 
-        setFavorite((favorited) => !favorited);
-        setLoading((toggle) => !toggle);
+        optimisticallyToggleFavorite();
+        toggleLoading();
 
         await actions.favorite(new FormData(event.currentTarget));
-        await router.navigate(router.page.location.pathname);
+        await revalidate();
 
-        setLoading((toggle) => !toggle);
+        toggleLoading();
     }
 
     return (
-        <form method="post" action={actions.favorite} onSubmit={enhance}>
+        <form method="post" action={actions.favorite} onSubmit={toggleFavorite}>
             <input type="hidden" name="id" value={props.id} />
             <button
                 aria-label={favorite() ? "Remove from favorites" : "Add to favorites"}

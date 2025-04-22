@@ -6,9 +6,6 @@ import { actions } from "astro:actions";
 import { getContactId } from "~/actions/get-contact-id";
 import { getContact } from "~/lib/contacts";
 
-const id = getContactId(Astro);
-const contact = await getContact(id);
-
 const result = Astro.getActionResult(actions.edit);
 if (result) {
     if (!result.error) {
@@ -17,6 +14,9 @@ if (result) {
 
     console.error(result.error);
 }
+
+const id = getContactId(Astro);
+const contact = await getContact(id);
 ---
 
 <SidebarLayout title={`Editing ${contact.first} ${contact.last}`}>

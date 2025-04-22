@@ -4,8 +4,6 @@ import { z } from "astro:schema";
 import { createContact, deleteContact, getContact, updateContact } from "~/lib/contacts.ts";
 import { getContactId } from "./get-contact-id.ts";
 
-// import { delay } from "@std/async";
-
 export const server = {
     newContact: defineAction({
         accept: "form",
@@ -18,7 +16,6 @@ export const server = {
         accept: "form",
         input: z.object({ id: z.number().int(), favorite: z.boolean() }),
         async handler({ id }) {
-            // await delay(3000);
             const { favorite } = await getContact(id);
             const contact = await updateContact(id, { favorite: !favorite });
             console.log(
@@ -26,13 +23,12 @@ export const server = {
             );
         },
     }),
-    destroy: defineAction({
+    delete: defineAction({
         accept: "form",
         input: z.object({ id: z.number() }),
         async handler({ id }) {
             const contact = await deleteContact(id);
             console.log(`Contact (${contact.id}) deleted`);
-            // throw Response.redirect("/");
         },
     }),
     edit: defineAction({

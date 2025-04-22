@@ -1,12 +1,13 @@
 // deno-lint-ignore-file no-explicit-any no-window
 import {
     navigate,
+    type NavigationTypeString,
     type Options,
     type TransitionBeforePreparationEvent,
 } from "astro:transitions/client";
 
-import { onCleanup, onMount } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createSignal, onCleanup, onMount, untrack } from "solid-js";
+import { createStore, reconcile } from "solid-js/store";
 
 type JsonObject =
     & {
@@ -19,41 +20,7 @@ type JsonArray = JsonValue[] | readonly JsonValue[];
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
-type NavigationStates = {
-    Idle: {
-        state: "idle";
-        location: undefined;
-        formData: undefined;
-    };
-    Loading: {
-        state: "loading";
-        location: PageLocation;
-        formData: undefined;
-    };
-    Submitting: {
-        state: "submitting";
-        location: PageLocation;
-        formData?: FormData;
-    };
-};
-type Navigation = NavigationStates[keyof NavigationStates];
-
-interface Path {
-    /**
-     * A URL pathname, beginning with a /.
-     */
-    pathname: string;
-    /**
-     * A URL search string, beginning with a ?.
-     */
-    search: string;
-    /**
-     * A URL fragment identifier, beginning with a #.
-     */
-    hash: string;
-}
-
-type To = string; // | Partial<Path>;
+type To = string;
 
 type SubmitTarget =
     | HTMLFormElement
@@ -64,98 +31,109 @@ type SubmitTarget =
     | JsonValue
     | null;
 
-type PageLocation = {
-    readonly hash: string;
-    readonly host: string;
-    readonly hostname: string;
-    readonly href: string;
-    readonly origin: string;
-    readonly pathname: string;
-    readonly port: string;
-    readonly protocol: string;
-    readonly search: string;
-    toString(): string;
-};
+export interface NavigationTarget {
+    url: URL;
+}
+
+export interface Page {
+    url: URL;
+    params: Record<string, string | undefined>;
+}
 
 type NavigatingStates = {
     Idle: {
         state: "idle";
+        type: null;
         to: null;
         from: null;
         formData: null;
     };
     Loading: {
         state: "loading";
-        to: PageLocation;
-        from: PageLocation;
+        type: NavigationTypeString;
+        to: NavigationTarget;
+        from: NavigationTarget;
         formData: null;
     };
     Submitting: {
         state: "submitting";
-        to: PageLocation;
-        from: PageLocation;
+        type: NavigationTypeString;
+        to: NavigationTarget;
+        from: NavigationTarget;
         formData?: FormData;
     };
 };
 type Navigating = NavigatingStates[keyof NavigatingStates];
 
-export type Router = {
-    page: {
-        location: PageLocation;
-    };
-    navigating: Navigating;
+export const BROWSER = typeof document !== "undefined";
 
-    navigate(to: To, options?: Options): Promise<void>;
-    navigate(target: SubmitTarget, options?: Options): Promise<void>;
-
-    isActive(path: string): boolean;
-    isPending(path: string): boolean;
-};
-
-function getCurrentLocation(url: URL): PageLocation {
-    if (typeof window !== "undefined") {
-        return window.location;
-    }
-
-    return url;
-}
-
-// Default navigation state
 const idleNavigation: NavigatingStates["Idle"] = {
     state: "idle",
+    type: null,
     to: null,
     from: null,
     formData: null,
 };
 
-type RouterState = {
-    location: PageLocation;
+const [serverLocation, setServerLocation] = createSignal<URL>();
+export function unsafe_provideServerURL(url: URL) {
+    setServerLocation(url);
+}
+
+const [serverParams, setServerParams] = createSignal<Record<string, string | undefined>>();
+export function unsafe_provideServerParams(params: Record<string, string | undefined>) {
+    setServerParams(params);
+}
+
+export type Router = {
+    page: Page;
     navigating: Navigating;
+
+    navigate(to: To, options?: Options): Promise<void>;
+    navigate(target: SubmitTarget, options?: Options): Promise<void>;
+
+    revalidate(): Promise<void>;
+
+    isActive(path: string): boolean;
+    isPending(path: string): boolean;
 };
 
-export function useRouter(url: URL): Router {
-    const [state, setState] = createStore<RouterState>({
-        location: getCurrentLocation(url),
-        navigating: structuredClone(idleNavigation),
-    });
+export function useRouter(): Router {
+    const [clientLocation, setClientLocation] = createSignal<URL>();
+    function refreshClientLocation() {
+        setClientLocation(new URL(window.location.href));
+    }
 
-    if (typeof document !== "undefined") {
+    const page = {
+        get url(): URL {
+            if (BROWSER) return clientLocation()!;
+            return serverLocation()!;
+        },
+        get params() {
+            return serverParams() ?? {};
+        },
+    };
+
+    const [navigating, setNavigating] = createStore<Navigating>(structuredClone(idleNavigation));
+
+    if (BROWSER) {
+        if (!untrack(clientLocation)) {
+            refreshClientLocation();
+        }
+
         const onBefore = (event: TransitionBeforePreparationEvent) => {
-            setState({
-                navigating: {
-                    state: "submitting",
-                    to: event.to,
-                    from: event.from,
-                    formData: event.formData,
-                },
-            });
+            setNavigating(reconcile({
+                state: (event.formData ? "submitting" : "loading") as "submitting",
+                formData: event.formData,
+                type: event.navigationType,
+                to: { url: event.to },
+                from: { url: event.from },
+            }));
         };
 
         const onAfter = () => {
-            setState({
-                location: getCurrentLocation(url),
-                navigating: structuredClone(idleNavigation),
-            });
+            refreshClientLocation();
+            setNavigating(reconcile(structuredClone(idleNavigation)));
         };
 
         onMount(() => {
@@ -204,20 +182,14 @@ export function useRouter(url: URL): Router {
         }
 
         await navigate(
-            `${state.location.pathname === "/" ? "" : state.location.pathname}?${search}`,
+            `${page.url.pathname === "/" ? "" : page.url.pathname}?${search}`,
             options,
         );
     }
 
     return {
-        page: {
-            get location() {
-                return state.location;
-            },
-        },
-        get navigating() {
-            return state.navigating;
-        },
+        page,
+        navigating,
         async navigate(target, options) {
             if (
                 target instanceof HTMLFormElement ||
@@ -234,16 +206,22 @@ export function useRouter(url: URL): Router {
 
             return await navigate(target.toString(), options);
         },
+        async revalidate() {
+            await navigate(page.url.pathname);
+        },
         isActive(path) {
-            return state.location.pathname === path ||
-                state.location.pathname.startsWith(path) ||
-                state.location.pathname.includes(path.split("?").at(0)!);
+            return page.url.pathname === path ||
+                page.url.pathname.startsWith(path) ||
+                page.url.pathname.includes(path.split("?").at(0)!);
         },
         isPending(path) {
-            return (state.navigating.to?.pathname === path ||
-                state.navigating.to?.pathname.startsWith(path) ||
-                state.navigating.to?.pathname.includes(path.split("?").at(0)!)) ??
+            return (navigating.to?.url.pathname === path ||
+                navigating.to?.url.pathname.startsWith(path) ||
+                navigating.to?.url.pathname.includes(path.split("?").at(0)!)) ??
                 false;
         },
     };
 }
+
+import ClientRouter from "../components/ClientRouter.astro";
+export { ClientRouter };
